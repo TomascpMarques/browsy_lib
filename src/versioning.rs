@@ -44,7 +44,7 @@ impl SemanticVersion {
 }
 
 #[cfg(test)]
-mod test_docs {
+mod test_semantic_versioning_suport {
     use crate::versioning::SemanticVersion;
 
     #[test]
