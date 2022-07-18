@@ -1,8 +1,24 @@
 use std::fmt::Display;
 
-pub struct SemanticVersion(u32, u32, u32);
+pub struct SemanticVersion(pub u32, pub u32, pub u32);
 
 impl SemanticVersion {
+    /// Creates a new Semantic version from a string separated by dots
+    /// Input is a Generic that implements display,
+    /// This way accept both &str for ease of programming,
+    /// and Strings as well.
+    /// ## Example:
+    /// ```
+    /// # use crate::browsy_lib::versioning::SemanticVersion;
+    /// # fn main() {
+    ///   let have = SemanticVersion::new("1.3.42").unwrap();
+    ///   let (mj, mn, pt) = (have.major(), have.minor(), have.patch());
+    ///
+    ///   assert_eq!(mj, 1);
+    ///   assert_eq!(mn, 3);
+    ///   assert_eq!(pt, 42)
+    /// # }
+    /// ```
     pub fn new<T>(target: T) -> Result<Self, String>
     where
         T: Display,
@@ -10,9 +26,8 @@ impl SemanticVersion {
         let formatted = target
             .to_string()
             .split('.')
-            .filter(|&x| x.parse::<u32>().is_ok())
-            .map(|x| x.parse().unwrap())
             .take(3)
+            .filter_map(|x| x.parse().ok())
             .collect::<Vec<u32>>();
 
         if formatted.len().ne(&3) {
@@ -54,11 +69,15 @@ mod test_semantic_versioning_suport {
     }
 
     #[test]
-    fn test_semantic_version_sfail() {
+    fn test_semantic_version_fail() {
         match SemanticVersion::new("hasi3.4asfk4.sfkka") {
             Ok(_) => assert!(false),
             Err(_) => assert!(true),
-        }
+        };
+        match SemanticVersion::new("hasi3.4as.fk4.sfke3.1.2.33.44.1.ka") {
+            Ok(_) => assert!(false),
+            Err(_) => assert!(true),
+        };
     }
 
     #[test]
