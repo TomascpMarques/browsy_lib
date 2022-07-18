@@ -19,11 +19,7 @@ impl SemanticVersion {
             return Err("Bad value was given".to_owned());
         }
 
-        Ok(Self(
-            formatted[0],
-            formatted[1],
-            formatted[2],
-        ))
+        Ok(Self(formatted[0], formatted[1], formatted[2]))
     }
 
     pub fn new_from_numbers(num: u32, num1: u32, num2: u32) -> Self {
