@@ -9,7 +9,7 @@ impl SemanticVersion {
     {
         let formatted = target
             .to_string()
-            .split(".")
+            .split('.')
             .filter(|&x| x.parse::<u32>().is_ok())
             .map(|x| x.parse().unwrap())
             .take(3)
@@ -20,9 +20,9 @@ impl SemanticVersion {
         }
 
         Ok(Self(
-            formatted[0].clone(),
-            formatted[1].clone(),
-            formatted[2].clone(),
+            formatted[0],
+            formatted[1],
+            formatted[2],
         ))
     }
 
