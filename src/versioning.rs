@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct SemanticVersion(pub u32, pub u32, pub u32);
 
 impl SemanticVersion {
@@ -35,6 +36,13 @@ impl SemanticVersion {
         }
 
         Ok(Self(formatted[0], formatted[1], formatted[2]))
+    }
+
+    pub fn is_semantic_v<T>(target: T) -> bool
+    where
+        T: Display,
+    {
+        Self::new(target).is_ok()
     }
 
     pub fn new_from_numbers(num: u32, num1: u32, num2: u32) -> Self {
