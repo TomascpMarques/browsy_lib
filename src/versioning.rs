@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Default, Debug, PartialEq, Eq, Hash, Clone)]
 pub struct SemanticVersion(pub u32, pub u32, pub u32);
 
 impl SemanticVersion {
