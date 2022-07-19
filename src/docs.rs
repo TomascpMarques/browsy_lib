@@ -1,12 +1,45 @@
 use std::collections::HashSet;
 
+use colored::Colorize;
 use scraper::{Html, Selector};
 
 use crate::versioning::SemanticVersion;
 
+macro_rules! selector {
+    ($selector: expr) => {
+        Selector::parse($selector).unwrap()
+    };
+}
+
 pub struct DocsQuery {
     pub topic: String,
-    pub crate_results: HashSet<String, DocsCrate>,
+    target_html: String,
+    pub crate_results: HashSet<DocsCrate>,
+}
+
+impl DocsQuery {
+    pub fn new(topic: String, target_html: String) -> Self {
+        Self {
+            topic,
+            target_html: target_html.clone(),
+            crate_results: Self::get_crates_from_result(target_html),
+        }
+    }
+
+    pub fn get_crates_from_result(html: String) -> HashSet<DocsCrate> {
+        Html::parse_fragment(html.as_str())
+            .select(&selector!("a.release"))
+            .filter_map(|elem| DocsCrate::new(elem.html().as_str()))
+            .collect()
+    }
+
+    pub fn set_target_html(&mut self, target_html: String) {
+        self.target_html = target_html;
+    }
+
+    pub fn target_html(&self) -> &str {
+        self.target_html.as_ref()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -18,34 +51,32 @@ pub struct DocsCrate {
     pub crate_version: SemanticVersion,
 }
 
-macro_rules! select {
-    ($selector: expr) => {
-        Selector::parse($selector).unwrap()
-    };
-}
-
 impl DocsCrate {
-    pub fn new(html_fragment: &String) -> Option<Self> {
+    pub fn new(html_fragment: &str) -> Option<Self> {
         Some(Self {
-            crate_url: Self::construct_crate_url(&html_fragment)?,
-            crate_name: Self::construct_crate_name(&html_fragment)?,
-            last_changed: Self::construct_crate_last_change(&html_fragment)?,
-            crate_description: Self::construct_crate_description(&html_fragment)?,
-            crate_version: Self::construct_crate_version(&html_fragment)?,
+            crate_url: Self::construct_crate_url(html_fragment)?,
+            crate_name: Self::construct_crate_name(html_fragment)?,
+            last_changed: Self::construct_crate_last_change(html_fragment)?,
+            crate_description: Self::construct_crate_description(html_fragment)?,
+            crate_version: Self::construct_crate_version(html_fragment)?,
         })
     }
 
     pub fn extract_fragments_inner_html(
-        html_fragment: &String,
+        html_fragment: &str,
         slct_err_msg: &str,
         selector: &str,
     ) -> Option<String> {
-        let fragment = Html::parse_fragment(html_fragment.as_str());
+        let fragment = Html::parse_fragment(html_fragment);
 
-        let selected = match fragment.select(&select!(selector)).next() {
+        let selected = match fragment.select(&selector!(selector)).next() {
             Some(elem) => elem,
             None => {
-                println!("{slct_err_msg}");
+                println!(
+                    "{} {}",
+                    "HTML Parssing".to_string().white().on_red().bold(),
+                    slct_err_msg.to_string().yellow()
+                );
                 return None;
             }
         };
@@ -58,17 +89,21 @@ impl DocsCrate {
     }
 
     pub fn extract_fragment_html_attribute(
-        html_fragment: &String,
+        html_fragment: &str,
         slct_err_msg: &str,
         selector: &str,
         attrbt: &str,
     ) -> Option<String> {
-        let fragment = Html::parse_fragment(html_fragment.as_str());
+        let fragment = Html::parse_fragment(html_fragment);
 
-        let selected = match fragment.select(&select!(selector)).next() {
+        let selected = match fragment.select(&selector!(selector)).next() {
             Some(elem) => elem,
             None => {
-                println!("{slct_err_msg}");
+                println!(
+                    "{} {}",
+                    "HTML Parssing".to_string().white().on_red().bold(),
+                    slct_err_msg.to_string().yellow()
+                );
                 return None;
             }
         };
@@ -76,28 +111,32 @@ impl DocsCrate {
         selected.value().attr(attrbt).map(|v| v.to_string())
     }
 
-    pub fn construct_crate_version(html_fragment: &String) -> Option<SemanticVersion> {
+    pub fn construct_crate_version(html_fragment: &str) -> Option<SemanticVersion> {
         match Self::extract_fragment_html_attribute(
             html_fragment,
             "Could not extract the crates version as a single piece of data",
             "a.release",
             "href",
         ) {
-            Some(v) => {
-                println!("->{v}");
-                Some(
-                    v.split('/')
-                        .find_map(|x| SemanticVersion::new(x).ok())
-                        .unwrap(),
-                )
-            }
+            Some(v) => Some(
+                v.split('/')
+                    .find_map(|x| SemanticVersion::new(x).ok())
+                    .unwrap_or_default(),
+                // TODO handle words in the semantic versioning i.e: 0.1.0-alpha.2
+            ),
             None => {
-                println!("Could not extract the crates version as a single piece of data");
+                println!(
+                    "{} {}",
+                    "Crate info".to_string().white().on_red().bold(),
+                    "Could not extract the crates version as a single piece of data"
+                        .to_string()
+                        .yellow()
+                );
                 None
             }
         }
     }
-    pub fn construct_crate_description(html_fragment: &String) -> Option<String> {
+    pub fn construct_crate_description(html_fragment: &str) -> Option<String> {
         Self::extract_fragments_inner_html(
             html_fragment,
             "Could not extract the crates description",
@@ -105,7 +144,7 @@ impl DocsCrate {
         )
     }
 
-    pub fn construct_crate_last_change(html_fragment: &String) -> Option<String> {
+    pub fn construct_crate_last_change(html_fragment: &str) -> Option<String> {
         Self::extract_fragments_inner_html(
             html_fragment,
             "Could not parse the last chnage in the crate",
@@ -113,7 +152,7 @@ impl DocsCrate {
         )
     }
 
-    pub fn construct_crate_name(html_fragment: &String) -> Option<String> {
+    pub fn construct_crate_name(html_fragment: &str) -> Option<String> {
         Self::extract_fragments_inner_html(
             html_fragment,
             "Could not extract the name from the fragment",
@@ -121,7 +160,7 @@ impl DocsCrate {
         )
     }
 
-    pub fn construct_crate_url(html_fragment: &String) -> Option<String> {
+    pub fn construct_crate_url(html_fragment: &str) -> Option<String> {
         Self::extract_fragment_html_attribute(html_fragment, "", "a.release", "href")
     }
 }
