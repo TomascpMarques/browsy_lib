@@ -3,7 +3,10 @@ use std::collections::HashSet;
 use colored::Colorize;
 use scraper::{Html, Selector};
 
-use crate::versioning::SemanticVersion;
+use crate::{
+    text_utills::{self, TextPadding},
+    versioning::SemanticVersion,
+};
 
 macro_rules! selector {
     ($selector: expr) => {
@@ -60,6 +63,33 @@ impl DocsCrate {
             crate_description: Self::construct_crate_description(html_fragment)?,
             crate_version: Self::construct_crate_version(html_fragment)?,
         })
+    }
+
+    pub fn print_crate_info(&self) {
+        println!("{}", Self::crate_info_fmt(self))
+    }
+
+    pub fn crate_info_fmt(&self) -> String {
+        format!(
+            "█ {} {} - {}\n█ {}",
+            self.crate_name.p().bright_yellow().on_black(),
+            self.crate_version.to_string().bold().green(),
+            self.last_changed.italic(),
+            text_utills::text_wrapp(self.crate_description.as_str(), 40),
+        )
+    }
+
+    pub fn crate_description_fmt(&self) -> String {
+        format!(
+            "{} {} - {}",
+            self.crate_name
+                .pad_left("· ", 1)
+                .p()
+                .bright_yellow()
+                .on_black(),
+            self.crate_version.to_string().bold().green(),
+            self.last_changed.italic(),
+        )
     }
 
     pub fn extract_fragments_inner_html(
@@ -153,15 +183,24 @@ impl DocsCrate {
     }
 
     pub fn construct_crate_name(html_fragment: &str) -> Option<String> {
-        Self::extract_fragments_inner_html(
+        match Self::extract_fragment_html_attribute(
             html_fragment,
-            "Could not extract the name from the fragment",
-            "div.name",
-        )
+            "Could not get the crate name",
+            "a.release",
+            "href",
+        ) {
+            Some(v) => Some(v.split('/').find(|x| !x.is_empty()).unwrap().to_string()),
+            _ => None,
+        }
     }
 
     pub fn construct_crate_url(html_fragment: &str) -> Option<String> {
-        Self::extract_fragment_html_attribute(html_fragment, "", "a.release", "href")
+        Self::extract_fragment_html_attribute(
+            html_fragment,
+            "Could not extract the crate url",
+            "a.release",
+            "href",
+        )
     }
 }
 
