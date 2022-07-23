@@ -1,12 +1,10 @@
+use browsy_helpers::text_utills::{self, TextPadding};
 use std::collections::HashSet;
 
 use colored::Colorize;
 use scraper::{Html, Selector};
 
-use crate::{
-    text_utills::{self, TextPadding},
-    versioning::SemanticVersion,
-};
+use crate::versioning::SemanticVersion;
 
 macro_rules! selector {
     ($selector: expr) => {
@@ -89,7 +87,7 @@ impl DocsCrate {
             self.crate_name.p().bright_yellow().on_black(),
             self.crate_version.to_string().bold().green(),
             self.last_changed.italic(),
-            text_utills::text_wrapp(self.crate_description.as_str(), 40),
+            text_utills::text_wrapp(self.crate_description.as_str(), 50),
             "Install".p().on_yellow().white().bold(),
             "Cargo.toml".p().white().on_red().italic().bold(),
             self.crate_name,

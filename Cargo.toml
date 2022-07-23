@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 colored = "2.0.0"
 scraper = "0.13.0"
+
+# In project dependencies
+browsy_helpers = {path = "../browsy_helpers"}
