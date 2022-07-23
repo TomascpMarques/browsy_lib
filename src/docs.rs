@@ -56,13 +56,27 @@ pub struct DocsCrate {
 
 impl DocsCrate {
     pub fn new(html_fragment: &str) -> Option<Self> {
-        Some(Self {
-            crate_url: Self::construct_crate_url(html_fragment)?,
-            crate_name: Self::construct_crate_name(html_fragment)?,
-            last_changed: Self::construct_crate_last_change(html_fragment)?,
-            crate_description: Self::construct_crate_description(html_fragment)?,
-            crate_version: Self::construct_crate_version(html_fragment)?,
-        })
+        let crate_url_from_html = Self::construct_crate_url(html_fragment);
+        let crate_name_from_html = Self::construct_crate_name(html_fragment);
+        let last_change_from_html = Self::construct_crate_last_change(html_fragment);
+        let crate_description_from_html = Self::construct_crate_description(html_fragment);
+        let crate_version_from_html = Self::construct_crate_version(html_fragment);
+
+        match crate_url_from_html.is_none()
+            || last_change_from_html.is_none()
+            || crate_description_from_html.is_none()
+            || crate_version_from_html.is_none()
+            || crate_name_from_html.is_none()
+        {
+            false => Some(Self {
+                crate_url: crate_url_from_html.unwrap(),
+                crate_name: crate_name_from_html.unwrap(),
+                last_changed: last_change_from_html.unwrap(),
+                crate_description: crate_description_from_html.unwrap(),
+                crate_version: crate_version_from_html.unwrap(),
+            }),
+            _ => None,
+        }
     }
 
     pub fn print_crate_info(&self) {
@@ -71,24 +85,50 @@ impl DocsCrate {
 
     pub fn crate_info_fmt(&self) -> String {
         format!(
-            "█ {} {} - {}\n█ {}",
+            " {} {} - {}\n {}\n\n {}\n{}  {}=\"{}\"\n{}       cargo add {}\n\n{} {}\n",
             self.crate_name.p().bright_yellow().on_black(),
             self.crate_version.to_string().bold().green(),
             self.last_changed.italic(),
             text_utills::text_wrapp(self.crate_description.as_str(), 40),
+            "Install".p().on_yellow().white().bold(),
+            "Cargo.toml".p().white().on_red().italic().bold(),
+            self.crate_name,
+            self.crate_version,
+            "Cargo".p().white().on_blue().italic().bold(),
+            self.crate_name.bold(),
+            "LINK".p().on_blue().white().bold().italic(),
+            format!("https://docs.rs/{}", self.crate_url)
+                .bright_blue()
+                .underline()
         )
     }
 
-    pub fn crate_description_fmt(&self) -> String {
+    pub fn crate_info_line_separated(&self) -> Vec<String> {
+        Self::crate_info_fmt(&self)
+            .split('\n')
+            .map(|c| c.trim().into())
+            .collect::<Vec<String>>()
+    }
+
+    pub fn crate_widget_fmt(&self) -> String {
         format!(
             "{} {} - {}",
+            self.crate_name.p().bright_yellow().on_black(),
+            self.crate_version.to_string().bold().green(),
+            self.last_changed.italic(),
+        )
+    }
+
+    pub fn crate_discriptor_fmt(&self) -> String {
+        format!(
+            "{} {}\n-> {}",
             self.crate_name
                 .pad_left("· ", 1)
                 .p()
                 .bright_yellow()
                 .on_black(),
             self.crate_version.to_string().bold().green(),
-            self.last_changed.italic(),
+            self.crate_description,
         )
     }
 
