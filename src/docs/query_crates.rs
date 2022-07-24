@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use scraper::Html;
 
-use super::docs_crate;
+use super::crate_details;
 
 #[macro_export]
 macro_rules! selector {
@@ -14,7 +14,7 @@ macro_rules! selector {
 pub struct DocsQuery {
     pub topic: String,
     target_html: String,
-    pub crate_results: HashSet<docs_crate::DocsCrate>,
+    pub crate_results: HashSet<crate_details::DocsCrate>,
 }
 
 impl DocsQuery {
@@ -26,10 +26,10 @@ impl DocsQuery {
         }
     }
 
-    pub fn get_crates_from_result(html: String) -> HashSet<docs_crate::DocsCrate> {
+    pub fn get_crates_from_result(html: String) -> HashSet<crate_details::DocsCrate> {
         Html::parse_fragment(html.as_str())
             .select(&selector!("a.release"))
-            .filter_map(|elem| docs_crate::DocsCrate::new(elem.html().as_str()))
+            .filter_map(|elem| crate_details::DocsCrate::new(elem.html().as_str()))
             .collect()
     }
 
@@ -58,7 +58,7 @@ macro_rules! doc_crate_test_builder {
 mod test_docs_crate {
     use crate::versioning::SemanticVersion;
 
-    use super::docs_crate::DocsCrate;
+    use super::crate_details::DocsCrate;
 
     #[test]
     fn test_new_docs_crate() {
